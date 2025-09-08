@@ -1,0 +1,142 @@
+# Clase Libro
+class Libro:
+    def __init__(self, titulo, autor, categoria, isbn):
+        # Usamos una tupla para los atributos inmutables
+        self.datos = (titulo, autor)  
+        self.categoria = categoria
+        self.isbn = isbn
+
+    def __str__(self):
+        return f"{self.datos[0]} de {self.datos[1]} | Categoría: {self.categoria} | ISBN: {self.isbn}"
+
+
+# Clase Usuario
+class Usuario:
+    def __init__(self, nombre, user_id):
+        self.nombre = nombre
+        self.user_id = user_id
+        self.libros_prestados = []  # lista de libros prestados
+
+    def prestar_libro(self, libro):
+        self.libros_prestados.append(libro)
+
+    def devolver_libro(self, isbn):
+        for libro in self.libros_prestados:
+            if libro.isbn == isbn:
+                self.libros_prestados.remove(libro)
+                return libro
+        return None
+
+    def listar_prestados(self):
+        if not self.libros_prestados:
+            return "No tiene libros prestados."
+        return "\n".join([str(libro) for libro in self.libros_prestados])
+
+    def __str__(self):
+        return f"Usuario: {self.nombre} | ID: {self.user_id}"
+
+
+# Clase Biblioteca
+class Biblioteca:
+    def __init__(self):
+        self.libros = {}  # diccionario con ISBN como clave y objeto Libro como valor
+        self.usuarios = {}  # diccionario con ID como clave y objeto Usuario como valor
+        self.user_ids = set()  # conjunto para asegurar IDs únicos
+
+    # Gestión de libros
+    def agregar_libro(self, libro):
+        if libro.isbn not in self.libros:
+            self.libros[libro.isbn] = libro
+            print(f"Libro '{libro.datos[0]}' agregado.")
+        else:
+            print("El libro ya existe en la biblioteca.")
+
+    def quitar_libro(self, isbn):
+        if isbn in self.libros:
+            eliminado = self.libros.pop(isbn)
+            print(f"Libro '{eliminado.datos[0]}' eliminado.")
+        else:
+            print("Libro no encontrado en la biblioteca.")
+
+    # Gestión de usuarios
+    def registrar_usuario(self, usuario):
+        if usuario.user_id not in self.user_ids:
+            self.usuarios[usuario.user_id] = usuario
+            self.user_ids.add(usuario.user_id)
+            print(f"Usuario '{usuario.nombre}' registrado.")
+        else:
+            print("El ID de usuario ya existe.")
+
+    def dar_baja_usuario(self, user_id):
+        if user_id in self.usuarios:
+            eliminado = self.usuarios.pop(user_id)
+            self.user_ids.remove(user_id)
+            print(f"Usuario '{eliminado.nombre}' dado de baja.")
+        else:
+            print("Usuario no encontrado.")
+
+    # Préstamos
+    def prestar_libro(self, user_id, isbn):
+        if user_id not in self.usuarios:
+            print("Usuario no registrado.")
+            return
+        if isbn not in self.libros:
+            print("Libro no disponible en la biblioteca.")
+            return
+        usuario = self.usuarios[user_id]
+        libro = self.libros.pop(isbn)  # remover del catálogo de disponibles
+        usuario.prestar_libro(libro)
+        print(f"Libro '{libro.datos[0]}' prestado a {usuario.nombre}.")
+
+    def devolver_libro(self, user_id, isbn):
+        if user_id not in self.usuarios:
+            print("Usuario no registrado.")
+            return
+        usuario = self.usuarios[user_id]
+        libro = usuario.devolver_libro(isbn)
+        if libro:
+            self.libros[isbn] = libro
+            print(f"Libro '{libro.datos[0]}' devuelto por {usuario.nombre}.")
+        else:
+            print("El usuario no tenía prestado este libro.")
+
+    # Búsquedas
+    def buscar_por_titulo(self, titulo):
+        return [libro for libro in self.libros.values() if libro.datos[0].lower() == titulo.lower()]
+
+    def buscar_por_autor(self, autor):
+        return [libro for libro in self.libros.values() if libro.datos[1].lower() == autor.lower()]
+
+    def buscar_por_categoria(self, categoria):
+        return [libro for libro in self.libros.values() if libro.categoria.lower() == categoria.lower()]
+
+
+# --------- PRUEBA DEL SISTEMA ---------
+if __name__ == "__main__":
+    # Crear biblioteca
+    biblioteca = Biblioteca()
+
+    # Agregar libros
+    libro1 = Libro("Cien Años de Soledad", "Gabriel García Márquez", "Novela", "12345")
+    libro2 = Libro("El Principito", "Antoine de Saint-Exupéry", "Fábula", "67890")
+    biblioteca.agregar_libro(libro1)
+    biblioteca.agregar_libro(libro2)
+
+    # Registrar usuarios
+    usuario1 = Usuario("Ana", "U001")
+    usuario2 = Usuario("Carlos", "U002")
+    biblioteca.registrar_usuario(usuario1)
+    biblioteca.registrar_usuario(usuario2)
+
+    # Prestar libros
+    biblioteca.prestar_libro("U001", "12345")
+    print(usuario1.listar_prestados())
+
+    # Devolver libros
+    biblioteca.devolver_libro("U001", "12345")
+    print(usuario1.listar_prestados())
+
+    # Buscar libros
+    print("Búsqueda por autor 'Antoine de Saint-Exupéry':")
+    for libro in biblioteca.buscar_por_autor("Antoine de Saint-Exupéry"):
+        print(libro)
